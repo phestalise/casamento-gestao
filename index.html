@@ -18,6 +18,8 @@
   --gray-light: #D4D4D0;
   --success: #4A7C59;
   --paid-color: #2E6DA4;
+  --noivo-color: #2E6DA4;
+  --noiva-color: #B5476B;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Montserrat', sans-serif; background: var(--white); color: var(--black); min-height: 100vh; }
@@ -38,20 +40,26 @@ body { font-family: 'Montserrat', sans-serif; background: var(--white); color: v
 }
 .hero-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.72) 100%);
+  background: linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.4) 35%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.78) 100%);
   z-index: 2;
+}
+.hero-vignette {
+  position: absolute; inset: 0; z-index: 2;
+  background: radial-gradient(ellipse 70% 55% at 50% 42%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 70%);
 }
 .hero-content { position: relative; z-index: 3; text-align: center; padding: 2rem; }
 .hero-eyebrow {
   font-size: 0.62rem; font-weight: 600; letter-spacing: 0.4em; text-transform: uppercase;
   color: var(--butter); margin-bottom: 1.5rem; opacity: 0;
   animation: fadeUp 1s ease 0.3s forwards;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.7);
 }
 .hero-names {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(3.5rem, 10vw, 7rem); font-weight: 300;
   color: var(--white); line-height: 1.05; opacity: 0;
   animation: fadeUp 1s ease 0.6s forwards;
+  text-shadow: 0 4px 24px rgba(0,0,0,0.65), 0 1px 4px rgba(0,0,0,0.85);
 }
 .hero-names em { font-style: italic; color: var(--butter-light); }
 .hero-ampersand {
@@ -62,6 +70,7 @@ body { font-family: 'Montserrat', sans-serif; background: var(--white); color: v
   margin-top: 2rem; font-size: 0.75rem; letter-spacing: 0.3em;
   color: var(--gray-light); font-weight: 300; opacity: 0;
   animation: fadeUp 1s ease 0.9s forwards;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.7);
 }
 .hero-ornament {
   display: flex; align-items: center; gap: 1rem; margin: 1.5rem auto 0;
@@ -81,7 +90,29 @@ body { font-family: 'Montserrat', sans-serif; background: var(--white); color: v
 /* ── MAIN ── */
 .main-wrap { max-width: 1200px; margin: 0 auto; padding: 5rem 2rem; }
 
-/* ── FINANCEIRO ── */
+/* ── CONTAGEM REGRESSIVA ── */
+.countdown-wrap {
+  text-align: center; margin-bottom: 3rem; padding: 2.25rem 1.5rem;
+  border: 1px solid var(--gray-light); background: var(--off-white);
+}
+.countdown-title {
+  font-size: 0.62rem; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--gray); margin-bottom: 1.5rem;
+}
+.countdown-grid { display: flex; justify-content: center; gap: 1.75rem; flex-wrap: wrap; }
+.countdown-item { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
+.countdown-num {
+  font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 6vw, 3.4rem);
+  font-weight: 600; color: var(--butter-deep); line-height: 1;
+}
+.countdown-label {
+  margin-top: 0.4rem; font-size: 0.58rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--gray);
+}
+.countdown-sep { display: none; }
+.countdown-done { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--success); }
+
+/* ── FINANCEIRO / BIG NUMBERS (reutilizado p/ convidados) ── */
 .finance-summary {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1px; background: var(--gray-light); border: 1px solid var(--gray-light);
@@ -94,6 +125,8 @@ body { font-family: 'Montserrat', sans-serif; background: var(--white); color: v
 .fin-card .value.total-pago { color: var(--paid-color); }
 .fin-card .value.total-falta { color: #C0392B; }
 .fin-card .value.total-confirmado { color: var(--success); }
+.fin-card .value.total-noivo { color: var(--noivo-color); }
+.fin-card .value.total-noiva { color: var(--noiva-color); }
 
 /* ── PROGRESS ── */
 .progress-wrap { margin-bottom: 3rem; }
@@ -166,6 +199,31 @@ body { font-family: 'Montserrat', sans-serif; background: var(--white); color: v
 }
 .items-header span { font-size: 0.53rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray); font-weight: 600; }
 
+/* ── CONVIDADOS ── */
+.guests-header {
+  display: grid; grid-template-columns: 1fr 110px 110px 32px;
+  gap: 0.75rem; padding: 0.5rem 1.1rem;
+  background: var(--off-white); border-bottom: 1px solid var(--gray-light);
+}
+.guests-header span { font-size: 0.53rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray); font-weight: 600; }
+.guest-row {
+  display: grid; grid-template-columns: 1fr 110px 110px 32px;
+  gap: 0.75rem; align-items: center; padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid var(--off-white); transition: background 0.2s; cursor: pointer;
+}
+.guest-row:last-child { border-bottom: none; }
+.guest-row:hover { background: var(--off-white); }
+.guest-name { font-size: 0.83rem; font-weight: 500; color: var(--dark); }
+.side-badge, .confirm-badge {
+  font-size: 0.53rem; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase;
+  padding: 0.22rem 0.55rem; border-radius: 1px; white-space: nowrap; text-align: center;
+}
+.side-noivo  { background: #E3EEF8; color: var(--noivo-color); border: 1px solid #90B8D8; }
+.side-noiva  { background: #FBE8EF; color: var(--noiva-color); border: 1px solid #E8A9C0; }
+.confirm-yes { background: #E8F3EC; color: var(--success); border: 1px solid #B8D9C4; }
+.confirm-no  { background: #FDF8E3; color: #8A6A2A; border: 1px solid var(--butter); }
+.empty-note { font-size: 0.78rem; color: var(--gray); margin-bottom: 1rem; padding: 1rem; text-align: center; border: 1px dashed var(--gray-light); }
+
 /* ── ADD BTN ── */
 .add-btn {
   width: 100%; padding: 0.8rem; border: 1px dashed var(--gray-light);
@@ -237,12 +295,15 @@ footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-
   .item-row .item-paid { display: none; }
   .items-header     { grid-template-columns: 1fr 90px 70px 32px; }
   .items-header .h-pago { display: none; }
-}
 
-/* ── ANIMATIONS ── */
-@keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 0.8; } }
-@keyframes scrollPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+  .guest-row        { grid-template-columns: 1fr 90px 32px; }
+  .guest-row .confirm-badge { display: none; }
+  .guests-header    { grid-template-columns: 1fr 90px 32px; }
+  .guests-header .h-confirm { display: none; }
+
+  .countdown-grid   { gap: 1rem; }
+  .countdown-item   { min-width: 56px; }
+}
 </style>
 </head>
 <body>
@@ -253,6 +314,7 @@ footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-
   <!-- Foto: coloque o arquivo na mesma pasta e ajuste o nome abaixo (ex: foto.jpg, casal.png) -->
   <img id="couple-photo" src="./img/foto.jpg" alt="Jenypher e Paulo" onerror="this.style.display='none'">
   <div class="hero-overlay"></div>
+  <div class="hero-vignette"></div>
 
   <div class="hero-content">
     <p class="hero-eyebrow">Planejamento do Casamento</p>
@@ -261,7 +323,7 @@ footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-
       <span class="hero-ampersand">&amp;</span>
       <em>Paulo</em>
     </h1>
-    <p class="hero-date">25 / 04 / 2026</p>
+    <p class="hero-date">25 / 04 / 2027</p>
     <div class="hero-ornament">
       <span></span><div class="diamond"></div><span></span>
     </div>
@@ -275,6 +337,17 @@ footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-
 
 <!-- MAIN -->
 <main class="main-wrap">
+
+  <!-- CONTAGEM REGRESSIVA -->
+  <div class="countdown-wrap">
+    <p class="countdown-title">Faltam para o grande dia</p>
+    <div class="countdown-grid" id="countdown-grid">
+      <div class="countdown-item"><span class="countdown-num" id="cd-days">0</span><span class="countdown-label">Dias</span></div>
+      <div class="countdown-item"><span class="countdown-num" id="cd-hours">00</span><span class="countdown-label">Horas</span></div>
+      <div class="countdown-item"><span class="countdown-num" id="cd-minutes">00</span><span class="countdown-label">Minutos</span></div>
+      <div class="countdown-item"><span class="countdown-num" id="cd-seconds">00</span><span class="countdown-label">Segundos</span></div>
+    </div>
+  </div>
 
   <div class="finance-summary" id="finance-summary"></div>
 
@@ -303,9 +376,13 @@ footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-
   </div>
 
   <div id="sections-wrap"></div>
+
+  <!-- LISTA DE CONVIDADOS -->
+  <div id="guest-wrap"></div>
+
 </main>
 
-<!-- MODAL -->
+<!-- MODAL ITEM FINANCEIRO -->
 <div class="modal-overlay" id="modal" onclick="closeModalClick(event)">
   <div class="modal">
     <button class="modal-close" onclick="hideModal()">✕</button>
@@ -340,15 +417,47 @@ footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-
   </div>
 </div>
 
+<!-- MODAL CONVIDADO -->
+<div class="modal-overlay" id="guest-modal" onclick="closeGuestModalClick(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="hideGuestModal()">✕</button>
+    <h3 id="guest-modal-title">Novo convidado</h3>
+    <div class="form-group">
+      <label>Nome do convidado</label>
+      <input type="text" id="guest-name" placeholder="Ex: Maria Silva">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Lado</label>
+        <select id="guest-side">
+          <option value="noivo">Noivo (Paulo)</option>
+          <option value="noiva">Noiva (Jenypher)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Presença</label>
+        <select id="guest-confirmed">
+          <option value="0">⏳ Pendente</option>
+          <option value="1">✓ Confirmado</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveGuestEdit()">Salvar</button>
+      <button class="btn-danger" onclick="deleteGuest()">Excluir</button>
+    </div>
+  </div>
+</div>
+
 <div class="save-toast" id="save-toast">✓ Salvo automaticamente</div>
 
 <footer>
   <span class="heart">♡</span>
-  Jenypher &amp; Paulo · 25 de Abril de 2026
+  Jenypher &amp; Paulo · 25 de Abril de 2027
 </footer>
 
 <script>
-// ── DADOS PADRÃO ──────────────────────────────
+// ── DADOS PADRÃO — FINANCEIRO ─────────────────
 const DEFAULT_DATA = {
   casamento: {
     label: 'Lista do Casamento', icon: '💍',
@@ -386,14 +495,21 @@ const DEFAULT_DATA = {
   }
 };
 
+// ── DADOS PADRÃO — CONVIDADOS ──────────────────
+// Adicione/remova exemplos livremente; comece vazio se preferir.
+const DEFAULT_GUESTS = [];
+
 // ── ESTADO ───────────────────────────────────
 let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+let guests = JSON.parse(JSON.stringify(DEFAULT_GUESTS));
 let editTarget = null;
+let guestEditTarget = null;
 
 // ── STORAGE ──────────────────────────────────
 function save() {
   try {
     localStorage.setItem('jenypher_paulo_data', JSON.stringify(data));
+    localStorage.setItem('jenypher_paulo_guests', JSON.stringify(guests));
     showToast();
   } catch(e) { console.warn('localStorage indisponível', e); }
 }
@@ -405,6 +521,8 @@ function load() {
       // garante campo paid em itens antigos
       Object.values(data).forEach(s => s.items.forEach(i => { if (i.paid == null) i.paid = 0; }));
     }
+    const g = localStorage.getItem('jenypher_paulo_guests');
+    if (g) guests = JSON.parse(g);
   } catch(e) { console.warn('Erro ao carregar', e); }
 }
 function showToast() {
@@ -431,8 +549,8 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── RENDER ───────────────────────────────────
-function render() { renderFinance(); renderProgress(); renderSections(); }
+// ── RENDER GERAL ─────────────────────────────
+function render() { renderFinance(); renderProgress(); renderSections(); renderGuests(); }
 
 function allItems() { return Object.values(data).flatMap(s => s.items); }
 
@@ -504,7 +622,53 @@ function renderSections() {
   });
 }
 
-// ── MODAL ────────────────────────────────────
+// ── RENDER CONVIDADOS ─────────────────────────
+function renderGuests() {
+  const total      = guests.length;
+  const totalNoivo = guests.filter(g => g.side === 'noivo').length;
+  const totalNoiva = guests.filter(g => g.side === 'noiva').length;
+  const confirmados= guests.filter(g => g.confirmed).length;
+
+  const rowsHtml = guests.map((g, idx) => `
+    <div class="guest-row" onclick="openGuestEdit(${idx})">
+      <span class="guest-name">${escHtml(g.name)}</span>
+      <span class="side-badge ${g.side==='noivo' ? 'side-noivo' : 'side-noiva'}">${g.side==='noivo' ? 'Noivo' : 'Noiva'}</span>
+      <span class="confirm-badge ${g.confirmed ? 'confirm-yes' : 'confirm-no'}">${g.confirmed ? '✓ Confirmado' : '⏳ Pendente'}</span>
+      <button class="edit-btn" onclick="openGuestEdit(${idx});event.stopPropagation()">✎</button>
+    </div>
+  `).join('');
+
+  document.getElementById('guest-wrap').innerHTML = `
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon">👥</div>
+        <h2>Lista de Convidados</h2>
+        <div class="section-totals">
+          <div class="st-total">${total} convidados</div>
+          ${confirmados>0 ? `<div class="st-pago" style="color:var(--success)">✓ ${confirmados} confirmados</div>` : ''}
+        </div>
+      </div>
+
+      <div class="finance-summary">
+        <div class="fin-card"><p class="label">Total de Convidados</p><p class="value total-geral">${total}</p></div>
+        <div class="fin-card"><p class="label">Lado do Noivo</p><p class="value total-noivo">${totalNoivo}</p></div>
+        <div class="fin-card"><p class="label">Lado da Noiva</p><p class="value total-noiva">${totalNoiva}</p></div>
+        <div class="fin-card"><p class="label">Confirmados</p><p class="value total-confirmado">${confirmados}</p></div>
+      </div>
+
+      ${total > 0 ? `
+        <div class="guests-header">
+          <span>Nome</span><span>Lado</span><span class="h-confirm">Presença</span><span></span>
+        </div>
+        <div class="items-grid">${rowsHtml}</div>
+      ` : `<div class="empty-note">Nenhum convidado adicionado ainda. Clique abaixo para começar a lista.</div>`}
+
+      <button class="add-btn" onclick="openGuestAdd()">+ Adicionar convidado</button>
+    </div>
+  `;
+}
+
+// ── MODAL — ITEM FINANCEIRO ───────────────────
 function openEdit(sectionKey, idx) {
   const item = data[sectionKey].items[idx];
   editTarget = { sectionKey, idx, isNew: false };
@@ -549,9 +713,81 @@ function deleteItem() {
   hideModal(); save(); render();
 }
 
+// ── MODAL — CONVIDADO ──────────────────────────
+function openGuestEdit(idx) {
+  const g = guests[idx];
+  guestEditTarget = { idx, isNew: false };
+  document.getElementById('guest-modal-title').textContent = 'Editar: ' + g.name;
+  document.getElementById('guest-name').value      = g.name;
+  document.getElementById('guest-side').value      = g.side;
+  document.getElementById('guest-confirmed').value = g.confirmed ? '1' : '0';
+  showGuestModal();
+}
+function openGuestAdd() {
+  guestEditTarget = { idx: null, isNew: true };
+  document.getElementById('guest-modal-title').textContent = 'Novo convidado';
+  document.getElementById('guest-name').value      = '';
+  document.getElementById('guest-side').value      = 'noivo';
+  document.getElementById('guest-confirmed').value = '0';
+  showGuestModal();
+}
+function showGuestModal()       { document.getElementById('guest-modal').classList.add('active'); }
+function hideGuestModal()       { document.getElementById('guest-modal').classList.remove('active'); }
+function closeGuestModalClick(e){ if (e.target===document.getElementById('guest-modal')) hideGuestModal(); }
+
+function saveGuestEdit() {
+  const name      = document.getElementById('guest-name').value.trim();
+  const side      = document.getElementById('guest-side').value;
+  const confirmed = document.getElementById('guest-confirmed').value === '1';
+  if (!name) return;
+  const guest = { name, side, confirmed };
+  if (guestEditTarget.isNew) {
+    guests.push(guest);
+  } else {
+    guests[guestEditTarget.idx] = guest;
+  }
+  hideGuestModal(); save(); renderGuests();
+}
+function deleteGuest() {
+  if (guestEditTarget.isNew) { hideGuestModal(); return; }
+  if (!confirm('Remover "' + guests[guestEditTarget.idx].name + '"?')) return;
+  guests.splice(guestEditTarget.idx, 1);
+  hideGuestModal(); save(); renderGuests();
+}
+
+// ── CONTAGEM REGRESSIVA ────────────────────────
+// Ajuste a data/hora da cerimônia aqui se quiser maior precisão:
+const WEDDING_DATE = new Date('2027-04-25T16:00:00');
+
+function updateCountdown() {
+  const now = new Date();
+  let diff = WEDDING_DATE - now;
+  if (diff < 0) diff = 0;
+  const days    = Math.floor(diff / (1000*60*60*24));
+  const hours   = Math.floor((diff / (1000*60*60)) % 24);
+  const minutes = Math.floor((diff / (1000*60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+  document.getElementById('cd-days').textContent    = String(days);
+  document.getElementById('cd-hours').textContent   = String(hours).padStart(2,'0');
+  document.getElementById('cd-minutes').textContent = String(minutes).padStart(2,'0');
+  document.getElementById('cd-seconds').textContent  = String(seconds).padStart(2,'0');
+}
+
 // ── INIT ─────────────────────────────────────
 load();
 render();
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+// Garante que o nome do casal apareça mesmo se, por algum motivo,
+// a animação de entrada (CSS) não for executada pelo navegador.
+window.addEventListener('DOMContentLoaded', forceHeroVisible);
+window.addEventListener('load', forceHeroVisible);
+setTimeout(forceHeroVisible, 1500);
+function forceHeroVisible() {
+  document.querySelectorAll('.hero-eyebrow, .hero-names, .hero-date, .hero-ornament, .scroll-hint')
+    .forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; });
+}
 </script>
 </body>
 </html>

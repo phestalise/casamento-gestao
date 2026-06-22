@@ -285,6 +285,16 @@ body { font-family: 'Montserrat', sans-serif; background: var(--white); color: v
 }
 .save-toast.show { transform: translateX(-50%) translateY(0); }
 
+/* ── SYNC BADGE ── */
+.sync-badge {
+  position: fixed; top: 1rem; right: 1rem; z-index: 2000;
+  font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 0.4rem 0.75rem; border-radius: 2px; background: var(--off-white);
+  border: 1px solid var(--gray-light); color: var(--gray);
+}
+.sync-badge.ok    { color: var(--success); border-color: #B8D9C4; background: #E8F3EC; }
+.sync-badge.error { color: #C0392B; border-color: #E0AFAF; background: #FBE8E8; }
+
 /* ── FOOTER ── */
 footer { background: var(--black); color: var(--gray); text-align: center; padding: 3rem; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; }
 footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-bottom: 0.75rem; }
@@ -307,6 +317,8 @@ footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-
 </style>
 </head>
 <body>
+
+<div class="sync-badge" id="sync-badge">⏳ Carregando...</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -449,7 +461,7 @@ footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-
   </div>
 </div>
 
-<div class="save-toast" id="save-toast">✓ Salvo automaticamente</div>
+<div class="save-toast" id="save-toast">✓ Salvo na nuvem</div>
 
 <footer>
   <span class="heart">♡</span>
@@ -457,6 +469,20 @@ footer .heart { color: var(--butter); font-size: 1.2rem; display: block; margin-
 </footer>
 
 <script>
+/* ════════════════════════════════════════════════════════════
+   CONFIGURAÇÃO DA NUVEM (Firebase Realtime Database)
+   ════════════════════════════════════════════════════════════
+   1. Crie um projeto gratuito em https://console.firebase.google.com
+   2. Ative "Realtime Database" em modo de TESTE
+   3. Copie a URL do banco (algo como:
+      https://seu-projeto-default-rtdb.firebaseio.com)
+   4. Cole a URL abaixo, substituindo o texto entre aspas.
+   Sem isso preenchido, o site funciona só localmente (como antes).
+   ════════════════════════════════════════════════════════════ */
+const FIREBASE_URL = "https://casamento-6d7df-default-rtdb.southamerica-east1.firebasedatabase.app"; // projeto: casamento-6d7df (região Brasil)
+const CLOUD_ENABLED = FIREBASE_URL && FIREBASE_URL.startsWith('https://');
+const SYNC_INTERVAL_MS = 15000; // sincroniza com a nuvem a cada 15s
+
 // ── DADOS PADRÃO — FINANCEIRO ─────────────────
 const DEFAULT_DATA = {
   casamento: {
@@ -496,7 +522,6 @@ const DEFAULT_DATA = {
 };
 
 // ── DADOS PADRÃO — CONVIDADOS ──────────────────
-// Adicione/remova exemplos livremente; comece vazio se preferir.
 const DEFAULT_GUESTS = [];
 
 // ── ESTADO ───────────────────────────────────
@@ -504,31 +529,105 @@ let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
 let guests = JSON.parse(JSON.stringify(DEFAULT_GUESTS));
 let editTarget = null;
 let guestEditTarget = null;
+let isSaving = false;
+let isModalOpen = false;
 
-// ── STORAGE ──────────────────────────────────
-function save() {
+// ── SYNC BADGE ───────────────────────────────
+function setSyncBadge(state) {
+  const b = document.getElementById('sync-badge');
+  if (!CLOUD_ENABLED) { b.textContent = '💻 Somente local (sem nuvem configurada)'; b.className = 'sync-badge'; return; }
+  if (state === 'ok')     { b.textContent = '☁️ Sincronizado'; b.className = 'sync-badge ok'; }
+  if (state === 'saving') { b.textContent = '☁️ Salvando...'; b.className = 'sync-badge'; }
+  if (state === 'loading'){ b.textContent = '⏳ Carregando...'; b.className = 'sync-badge'; }
+  if (state === 'error')  { b.textContent = '⚠️ Sem conexão (usando local)'; b.className = 'sync-badge error'; }
+}
+
+// ── STORAGE: LOCAL (cache/fallback) ──────────
+function saveLocal() {
   try {
     localStorage.setItem('jenypher_paulo_data', JSON.stringify(data));
     localStorage.setItem('jenypher_paulo_guests', JSON.stringify(guests));
-    showToast();
   } catch(e) { console.warn('localStorage indisponível', e); }
 }
-function load() {
+function loadLocal() {
   try {
     const d = localStorage.getItem('jenypher_paulo_data');
     if (d) {
       data = JSON.parse(d);
-      // garante campo paid em itens antigos
       Object.values(data).forEach(s => s.items.forEach(i => { if (i.paid == null) i.paid = 0; }));
     }
     const g = localStorage.getItem('jenypher_paulo_guests');
     if (g) guests = JSON.parse(g);
-  } catch(e) { console.warn('Erro ao carregar', e); }
+  } catch(e) { console.warn('Erro ao carregar local', e); }
+}
+
+// ── STORAGE: NUVEM (Firebase REST) ───────────
+async function saveCloud() {
+  if (!CLOUD_ENABLED) return;
+  setSyncBadge('saving');
+  try {
+    const payload = { data, guests, updatedAt: Date.now() };
+    const res = await fetch(FIREBASE_URL + '/casamento.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    setSyncBadge('ok');
+  } catch(e) {
+    console.warn('Erro ao salvar na nuvem', e);
+    setSyncBadge('error');
+  }
+}
+async function loadCloud() {
+  if (!CLOUD_ENABLED) return false;
+  try {
+    const res = await fetch(FIREBASE_URL + '/casamento.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if (json && json.data) {
+      data = json.data;
+      guests = json.guests || [];
+      Object.values(data).forEach(s => s.items.forEach(i => { if (i.paid == null) i.paid = 0; }));
+      return true;
+    }
+    return false; // banco vazio ainda
+  } catch(e) {
+    console.warn('Erro ao carregar da nuvem', e);
+    return false;
+  }
+}
+
+// ── SAVE/LOAD UNIFICADOS ─────────────────────
+async function save() {
+  if (isSaving) return;
+  isSaving = true;
+  saveLocal();
+  await saveCloud();
+  showToast();
+  isSaving = false;
+}
+async function load() {
+  setSyncBadge('loading');
+  loadLocal(); // exibe algo imediatamente
+  const gotCloud = await loadCloud();
+  if (!gotCloud && CLOUD_ENABLED) {
+    // banco na nuvem ainda vazio: envia o que temos local pra inicializar
+    await saveCloud();
+  }
+  if (!CLOUD_ENABLED) setSyncBadge(null);
 }
 function showToast() {
   const t = document.getElementById('save-toast');
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── SINCRONIZAÇÃO PERIÓDICA (pega mudanças do outro lado) ──
+async function pollCloud() {
+  if (!CLOUD_ENABLED || isModalOpen || isSaving) return;
+  const changed = await loadCloud();
+  if (changed) { setSyncBadge('ok'); render(); }
 }
 
 // ── FORMAT / STATUS ───────────────────────────
@@ -688,8 +787,8 @@ function openAdd(sectionKey) {
   document.getElementById('edit-status').value = 'PENDENTE';
   showModal();
 }
-function showModal()      { document.getElementById('modal').classList.add('active'); }
-function hideModal()      { document.getElementById('modal').classList.remove('active'); }
+function showModal()      { isModalOpen = true; document.getElementById('modal').classList.add('active'); }
+function hideModal()      { isModalOpen = false; document.getElementById('modal').classList.remove('active'); }
 function closeModalClick(e){ if (e.target===document.getElementById('modal')) hideModal(); }
 
 function saveEdit() {
@@ -731,8 +830,8 @@ function openGuestAdd() {
   document.getElementById('guest-confirmed').value = '0';
   showGuestModal();
 }
-function showGuestModal()       { document.getElementById('guest-modal').classList.add('active'); }
-function hideGuestModal()       { document.getElementById('guest-modal').classList.remove('active'); }
+function showGuestModal()       { isModalOpen = true; document.getElementById('guest-modal').classList.add('active'); }
+function hideGuestModal()       { isModalOpen = false; document.getElementById('guest-modal').classList.remove('active'); }
 function closeGuestModalClick(e){ if (e.target===document.getElementById('guest-modal')) hideGuestModal(); }
 
 function saveGuestEdit() {
@@ -756,7 +855,6 @@ function deleteGuest() {
 }
 
 // ── CONTAGEM REGRESSIVA ────────────────────────
-// Ajuste a data/hora da cerimônia aqui se quiser maior precisão:
 const WEDDING_DATE = new Date('2027-04-25T16:00:00');
 
 function updateCountdown() {
@@ -774,13 +872,14 @@ function updateCountdown() {
 }
 
 // ── INIT ─────────────────────────────────────
-load();
-render();
-updateCountdown();
-setInterval(updateCountdown, 1000);
+(async function init() {
+  await load();
+  render();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+  if (CLOUD_ENABLED) setInterval(pollCloud, SYNC_INTERVAL_MS);
+})();
 
-// Garante que o nome do casal apareça mesmo se, por algum motivo,
-// a animação de entrada (CSS) não for executada pelo navegador.
 window.addEventListener('DOMContentLoaded', forceHeroVisible);
 window.addEventListener('load', forceHeroVisible);
 setTimeout(forceHeroVisible, 1500);

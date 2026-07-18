@@ -225,6 +225,27 @@ body { font-family: 'Montserrat', sans-serif; background: var(--white); color: v
 .confirm-no  { background: #FDF8E3; color: #8A6A2A; border: 1px solid var(--butter); }
 .empty-note { font-size: 0.78rem; color: var(--gray); margin-bottom: 1rem; padding: 1rem; text-align: center; border: 1px dashed var(--gray-light); }
 
+.guest-filters {
+  display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem; border: 1px solid var(--gray-light); background: var(--off-white);
+}
+.filter-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.filter-label {
+  font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--gray); margin-right: 0.25rem;
+}
+.filter-chip {
+  font-size: 0.62rem; letter-spacing: 0.06em; padding: 0.35rem 0.85rem;
+  border: 1px solid var(--gray-light); background: var(--white); color: var(--gray);
+  cursor: pointer; border-radius: 2px; font-family: 'Montserrat', sans-serif;
+  transition: all 0.2s;
+}
+.filter-chip:hover { border-color: var(--butter-deep); color: var(--butter-deep); }
+.filter-chip.active { background: var(--black); border-color: var(--black); color: var(--white); }
+.filter-count {
+  font-size: 0.62rem; color: var(--gray); letter-spacing: 0.05em; margin-left: auto;
+}
+
 .add-btn {
   width: 100%; padding: 0.8rem; border: 1px dashed var(--gray-light);
   background: none; color: var(--gray); font-size: 0.62rem; letter-spacing: 0.2em;
@@ -624,6 +645,8 @@ let guestEditTarget = null;
 let isSaving = false;
 let isModalOpen = false;
 let localUpdatedAt = 0;
+let guestFilterSide = 'all';     // 'all' | 'noivo' | 'noiva'
+let guestFilterStatus = 'all';   // 'all' | 'confirmed' | 'pending'
 
 function getEl(id) {
   const el = document.getElementById(id);
@@ -827,6 +850,19 @@ function renderSections() {
   });
 }
 
+function setGuestFilterSide(side) { guestFilterSide = side; renderGuests(); }
+function setGuestFilterStatus(status) { guestFilterStatus = status; renderGuests(); }
+
+function getFilteredGuests() {
+  return guests
+    .map((g, idx) => ({ ...g, _idx: idx }))
+    .filter(g => guestFilterSide === 'all' || g.side === guestFilterSide)
+    .filter(g => {
+      if (guestFilterStatus === 'all') return true;
+      return guestFilterStatus === 'confirmed' ? g.confirmed : !g.confirmed;
+    });
+}
+
 function renderGuests() {
   const wrap = getEl('guest-wrap');
   if (!wrap) return;
@@ -834,14 +870,35 @@ function renderGuests() {
   const totalNoivo = guests.filter(g => g.side === 'noivo').length;
   const totalNoiva = guests.filter(g => g.side === 'noiva').length;
   const confirmados= guests.filter(g => g.confirmed).length;
-  const rowsHtml = guests.map((g, idx) => `
-    <div class="guest-row" onclick="openGuestEdit(${idx})">
+
+  const filtered = getFilteredGuests();
+  const rowsHtml = filtered.map(g => `
+    <div class="guest-row" onclick="openGuestEdit(${g._idx})">
       <span class="guest-name">${escHtml(g.name)}</span>
       <span class="side-badge ${g.side==='noivo' ? 'side-noivo' : 'side-noiva'}">${g.side==='noivo' ? 'Noivo' : 'Noiva'}</span>
       <span class="confirm-badge ${g.confirmed ? 'confirm-yes' : 'confirm-no'}">${g.confirmed ? '✓ Confirmado' : '⏳ Pendente'}</span>
-      <button class="edit-btn" onclick="openGuestEdit(${idx});event.stopPropagation()">✎</button>
+      <button class="edit-btn" onclick="openGuestEdit(${g._idx});event.stopPropagation()">✎</button>
     </div>
   `).join('');
+
+  const filtersHtml = `
+    <div class="guest-filters">
+      <div class="filter-group">
+        <span class="filter-label">Lado</span>
+        <button class="filter-chip ${guestFilterSide==='all'?'active':''}" onclick="setGuestFilterSide('all')">Todos</button>
+        <button class="filter-chip ${guestFilterSide==='noivo'?'active':''}" onclick="setGuestFilterSide('noivo')">Noivo</button>
+        <button class="filter-chip ${guestFilterSide==='noiva'?'active':''}" onclick="setGuestFilterSide('noiva')">Noiva</button>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Presença</span>
+        <button class="filter-chip ${guestFilterStatus==='all'?'active':''}" onclick="setGuestFilterStatus('all')">Todos</button>
+        <button class="filter-chip ${guestFilterStatus==='confirmed'?'active':''}" onclick="setGuestFilterStatus('confirmed')">✓ Confirmado</button>
+        <button class="filter-chip ${guestFilterStatus==='pending'?'active':''}" onclick="setGuestFilterStatus('pending')">⏳ Pendente</button>
+      </div>
+      <span class="filter-count">${filtered.length} de ${total}</span>
+    </div>
+  `;
+
   wrap.innerHTML = `
     <div class="section">
       <div class="section-header">
@@ -858,12 +915,15 @@ function renderGuests() {
         <div class="fin-card"><p class="label">Lado da Noiva</p><p class="value total-noiva">${totalNoiva}</p></div>
         <div class="fin-card"><p class="label">Confirmados</p><p class="value total-confirmado">${confirmados}</p></div>
       </div>
-      ${total > 0 ? `
+      ${total > 0 ? filtersHtml : ''}
+      ${total > 0 ? (
+        filtered.length > 0 ? `
         <div class="guests-header">
           <span>Nome</span><span>Lado</span><span class="h-confirm">Presença</span><span></span>
         </div>
         <div class="items-grid">${rowsHtml}</div>
-      ` : `<div class="empty-note">Nenhum convidado adicionado ainda. Clique abaixo para começar a lista.</div>`}
+        ` : `<div class="empty-note">Nenhum convidado encontrado com estes filtros.</div>`
+      ) : `<div class="empty-note">Nenhum convidado adicionado ainda. Clique abaixo para começar a lista.</div>`}
       <button class="add-btn" onclick="openGuestAdd()">+ Adicionar convidado</button>
     </div>
   `;

@@ -610,8 +610,15 @@ const DEFAULT_GUESTS = [
   { name: 'Maria', side: 'noivo', confirmed: true },
 ];
 
+// Sempre que a lista fixa de convidados (DEFAULT_GUESTS) for atualizada no código,
+// aumente este número. Isso força o app a substituir a lista salva (local/nuvem)
+// pela lista nova do código uma única vez, e depois volta a respeitar as edições
+// feitas pela interface (adicionar/editar/excluir convidados) normalmente.
+const GUESTS_SEED_VERSION = 2;
+
 let data = JSON.parse(JSON.stringify(DEFAULT_DATA));
 let guests = JSON.parse(JSON.stringify(DEFAULT_GUESTS));
+let guestsSeedVersion = 0;
 let editTarget = null;
 let guestEditTarget = null;
 let isSaving = false;
@@ -626,7 +633,7 @@ function getEl(id) {
 
 function saveLocal() {
   try {
-    const payload = { data, guests, updatedAt: localUpdatedAt || Date.now() };
+    const payload = { data, guests, guestsSeedVersion, updatedAt: localUpdatedAt || Date.now() };
     localStorage.setItem('jenypher_paulo_data', JSON.stringify(payload));
   } catch(e) {}
 }
@@ -637,6 +644,7 @@ function loadLocal() {
       const parsed = JSON.parse(raw);
       data = parsed.data || DEFAULT_DATA;
       guests = parsed.guests || [];
+      guestsSeedVersion = parsed.guestsSeedVersion || 0;
       localUpdatedAt = parsed.updatedAt || 0;
       Object.values(data).forEach(s => s.items.forEach(i => { if (i.paid == null) i.paid = 0; }));
     }
@@ -648,7 +656,7 @@ async function saveCloud() {
   const now = Date.now();
   localUpdatedAt = now;
   try {
-    const payload = { data, guests, updatedAt: now };
+    const payload = { data, guests, guestsSeedVersion, updatedAt: now };
     const res = await fetch(FIREBASE_URL + '/casamento.json', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -673,6 +681,7 @@ async function loadCloud() {
       }
       data = json.data;
       guests = json.guests || [];
+      guestsSeedVersion = json.guestsSeedVersion || 0;
       localUpdatedAt = cloudUpdatedAt;
       Object.values(data).forEach(s => s.items.forEach(i => { if (i.paid == null) i.paid = 0; }));
       saveLocal();
@@ -697,7 +706,18 @@ async function save() {
 async function load() {
   loadLocal();
   const gotCloud = await loadCloud();
-  if (!gotCloud && CLOUD_ENABLED) {
+
+  // Se a lista salva (local ou na nuvem) ainda está numa versão antiga da
+  // lista fixa de convidados, substitui pelos nomes atuais do código.
+  // Isso roda só uma vez por atualização de versão — depois disso, tudo
+  // que for adicionado/editado pela interface é preservado normalmente.
+  if (guestsSeedVersion < GUESTS_SEED_VERSION) {
+    guests = JSON.parse(JSON.stringify(DEFAULT_GUESTS));
+    guestsSeedVersion = GUESTS_SEED_VERSION;
+    localUpdatedAt = Date.now();
+    saveLocal();
+    await saveCloud();
+  } else if (!gotCloud && CLOUD_ENABLED) {
     await saveCloud();
   }
 }
